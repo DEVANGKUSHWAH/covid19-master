@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>COVID19</title>
+</head>
+<body>
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+
+<script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-database.js"></script>
+<script src="https://www.gstatic.com/charts/loader.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/1.3.5/jspdf.min.js"></script>
+
+<style>
+    .chart {
+        width: 100%; 
+        height: 100%;
+    }
+    .row {
+        margin:0 !important;
+    }
+</style>
+<div class="w3-top">
+    <div class="w3-bar w3-light-green w3-large w3-sans-serif">
+      <a href="#" class="w3-bar-item w3-button">Deceased Dashboard</a>
+      <a href="#notification-div" class="w3-bar-item w3-button">Notify & Advisories</a>
+      <a href="#hosiptal-div" class="w3-bar-item w3-button">Hospitals Dashboard</a>
+      <a href="#hosiptal2-div" class="w3-bar-item w3-button">Medical Colleges</a>
+      <a href="#contact" class="w3-bar-item w3-button">Contact & HelpLine</a>
+    </div>
+</div>
+
+<!-- <div class="w3-sidebar w3-bar-block w3-animate-left" style="display:none;z-index:5" id="mySidebar">
+    <button class="w3-bar-item w3-button w3-large" onclick="w3_close()">Close &times;</button>
+    <a href="#" class="w3-bar-item w3-button">Deceased Dashboard</a>
+    <a href="#" class="w3-bar-item w3-button">Contact & HelpLine</a>
+    <a href="#notification" class="w3-bar-item w3-button">Notify & Advisories</a>
+    <a href="#" class="w3-bar-item w3-button">Hospitals Dashboard</a>
+    <a href="#" class="w3-bar-item w3-button">Medical Colleg & Beds</a>
+</div>
+  
+  <div class="w3-overlay w3-animate-opacity" onclick="w3_close()" style="cursor:pointer;" id="myOverlay"></div>
+  
+  <button class="w3-button w3-white w3-xxlarge" onclick="w3_open()">&#9776;</button> -->
+<br>
+
+<div id="dashboard-div" class="w3-center" style="height: 100%;"></div>
+  <div id="chart_div" class="chart"></div>
+  <div class="w3-row">
+    <input id="from_date" class="w3-input w3-border w3-col s4 m4 l4" type="date" value="2020-02-01" onchange="date_changed()"/>
+    <input id="to_date" class="w3-input w3-border w3-col s4 m4 l4" type="date" onchange="date_changed()"/>
+    <input id="save-pdf" class="w3-btn w3-light-green  w3-col s4 m4 l4" type="button" value="Save Chart" disabled />
+  </div>
+</div>
+
+<div class="w3-row">
+<select class="w3-select w3-border w3-col s4 m4 l4" name="gender" id="gender" onchange="buttonShowClick()">
+    <option disabled selected value> -- select gender -- </option>
+    <option value="male">Male</option>
+    <option value="female">Female</option>
+    <option value="NA">NA</option>
+    <option value="">None</option>
+</select>
+<select class="w3-select w3-border w3-col s4 m4 l4" name="state" id="state" onchange="buttonShowClick()">
+    <option disabled selected value> -- select state -- </option>
+    <option value="">India</option>
+    <option value="Kerala">Kerala</option>
+<option value="Delhi">Delhi</option>
+<option value="Telangana">Telangana</option>
+<option value="Rajasthan">Rajasthan</option>
+<option value="Haryana">Haryana</option>
+<option value="Uttar Pradesh">Uttar Pradesh</option>
+<option value="Ladakh">Ladakh</option>
+<option value="Tamil Nadu">Tamil Nadu</option>
+<option value="Jammu and Kashmir">Jammu</option>
+<option value="Karnataka">Karnataka</option>
+<option value="Maharashtra">Maharashtra</option>
+<option value="Punjab">Punjab</option>
+<option value="Andhra Pradesh">AndhraPradesh</option>
+<option value="Uttarakhand">Uttarakhand</option>
+<option value="Odisha">Odisha</option>
+<option value="Puducherry">Puducherry</option>
+<option value="West Bengal">West</option>
+<option value="Chandigarh">Chandigarh</option>
+<option value="Chhattisgarh">Chhattisgarh</option>
+<option value="Gujarat">Gujarat</option>
+<option value="Himachal Pradesh">Himachal</option>
+<option value="Madhya Pradesh">Madhya</option>
+<option value="Bihar">Bihar</option>
+<option value="Manipur">Manipur</option>
+<option value="Mizoram">Mizoram</option>
+<option value="Goa">Goa</option>
+<option value="Andaman and Nicobar Islands">Andaman</option>
+</select>
+<select class="w3-select w3-border w3-col s4 m4 l4" name="ageGroups" id="ageGroups" onchange="buttonShowClick()">
+    <option disabled selected value> -- select age group -- </option>
+    <option value="0,9">0-9</option>
+    <option value="10,19">10-19</option>
+    <option value="20,29">20-29</option>
+    <option value="30,39">30-39</option>
+    <option value="40,49">40-49</option>
+    <option value="50,59">50-59</option>
+    <option value="60,69">60-69</option>
+    <option value="70,79">70-79</option>
+    <option value="80,89">80-89</option>
+    <option value="90,110">90-110</option>
+    <option value="">None</option>
+</select>
+</div>
+
+<div id="notification-div" class="w3-center" style="height: 600px; ">
+    <h1>Notifications & advisories:</h1> 
+    <div class="w3-responsive" style="height: 90%; width:80%; margin:auto;">
+        <table id="employees" class="w3-table-all"></table> 
+    </div>
+</div>
+
+<br><br>
+
+<div id="hosiptal-div" class = "w3-center"  style="height: 600px;">
+    <h1>Hospitals Dashboard:</h1>
+    <div class = "w3-responsive" style = "height : 90%; width:80%; margin:auto;">
+        <table id="hospital" class="w3-table-all"></table> 
+    </div>
+</div>
+
+<br><br>
+
+<div id="hosiptal2-div" class = "w3-center" style="height: 600px;">
+    <h1>Medical Colleges:</h1>
+    <input class="w3-input w3-border w3-padding" type="text" 
+            placeholder="Search for states or types..." id="medicalInput" 
+            style="width:60%; margin:auto; margin-bottom: 5px;" onkeyup="medicalCollegesFilter()">
+    <div class = "w3-responsive" style = "height : 90%; width:80%; margin:auto;">
+        <table id="hospital_medical" class="w3-table-all"></table> 
+    </div>
+</div>
+
+<br><br>
+
+<div id="contact" class = "w3-center" style="height: 600px;">
+    <h1>Contact & HelpLine:</h1>
+    <div class = "w3-responsive" style = "height : 90%; width:80%; margin:auto;">
+        <table id="number" class="w3-table-all" ></table> 
+    </div>
+</div>
+
+
+
+
+<!-- TODO: Add SDKs for Firebase products that you want to use
+     https://firebase.google.com/docs/web/setup#available-libraries -->
+
+<script>
+    document.getElementById('to_date').valueAsDate = new Date();
+  // Your web app's Firebase configuration
+  var firebaseConfig = {
+    apiKey: "AIzaSyDg8iP3TfC6HJvjD_W9FIyyhvTrOJx8HY0",
+    authDomain: "covid-e65b8.firebaseapp.com",
+    databaseURL: "https://covid-e65b8.firebaseio.com",
+    projectId: "covid-e65b8",
+    storageBucket: "covid-e65b8.appspot.com",
+    messagingSenderId: "754926079609",
+    appId: "1:754926079609:web:dacff232a1dfabaf890ea8"
+  };
+  // Initialize Firebase
+  firebase.initializeApp(firebaseConfig);
+  console.log("firebase initialized")
+  
+  var rootRef = firebase.database().ref();//'patients');
+  var urlRef = rootRef.child("patients");
+  var all_records = [];
+  var cnt = 0;
+  var max_cnt = 10;
+  // urlRef.limitToFirst(100)
+  urlRef.on("value", function(snapshot) {
+        console.log(snapshot);
+        max_cnt = snapshot.numChildren();        
+        snapshot.forEach(function(child) {
+            cnt= cnt + 1;
+            var record = child.val();
+            var parsed_record = {
+                'date': record.reportedOn,
+                'state': record.state,
+                'age': record.ageEstimate,
+                'gender': record.gender
+            }
+            all_records.push(parsed_record)
+            console.log(parsed_record);
+            if(cnt >= max_cnt){
+                btnSave.disabled = false;
+                buttonShowClick();
+            }
+        });
+  });
+
+  function date_changed(){
+     //console.log("date_changed");
+      buttonShowClick();
+  }
+
+
+    var container = document.getElementById('chart_div');
+    var chart = "None";
+    var btnSave = document.getElementById('save-pdf');
+    // var btnShow = document.getElementById('show');
+    var title = 'COVID-19 DECEASED STATS';
+    var default_title = 'COVID-19 DECEASED STATS';
+
+    google.charts.load('current', {'packages':['corechart']});
+    google.charts.setOnLoadCallback(enableChart);
+
+    function enableChart(){
+        //btnSave.disabled = false;
+        chart = new google.visualization.LineChart(container);
+    }
+  
+    // btnShow.addEventListener('click', function () {
+    //     buttonShowClick();
+    // }, false);
+
+    function buttonShowClick(){
+        var data = get_data();
+        show_data(data);
+    }
+
+    btnSave.addEventListener('click', function () {
+      var doc = new jsPDF();
+      doc.addImage(chart.getImageURI(), 0,0);
+      doc.save('chart.pdf');
+    }, false);
+  
+    function get_data(){
+        var state = document.getElementById("state").value;
+        var age = document.getElementById("ageGroups").value;
+        var gender = document.getElementById("gender").value;
+        var fromAge=0, toAge=200;
+        var from_date_val = document.getElementById("from_date").value;
+        var to_date_val = document.getElementById("to_date").value;
+
+        title = default_title;
+        if(age != ""){
+            fromAge = parseInt(age.split(",")[0]);
+            toAge = parseInt(age.split(",")[1]);    
+            title = title + " (Age: "+fromAge+"-"+toAge+")";        
+        }
+
+        if(state != ""){
+            title = title + " (State: "+state+")";
+        }
+
+        if(gender == ""){
+            gender = "All";
+        }else{
+            title = title + " (Gender: "+gender+")";
+        }
+
+        title = title + " ("+ from_date_val + " to " + to_date_val + ")";
+
+        var selected_records = [];
+        for(var rec of all_records){
+            if(gender != "All"){
+                if(gender == "NA"){
+                    gender = "";
+                }     
+                if(rec['gender'] != gender)
+                    continue;                
+                // filter gender
+            }
+            if(state != ""){
+                if(rec['state'] != state)
+                    continue;
+                // filter state
+            }
+            if(age != ""){
+                if(rec['age'] =="")
+                    continue;
+                cur_age = parseInt(rec['age']);
+                if(cur_age< fromAge || cur_age > toAge)
+                    continue;
+                // filter age
+            }
+            selected_records.push(rec);
+        }
+
+        var counts = selected_records.reduce((p, c) => {
+            var name = c.date;
+            if (!p.hasOwnProperty(name)) {
+                p[name] = 0;
+            }
+            p[name]++;
+            return p;
+        }, {});
+        from_date_val = new Date(from_date_val);
+        to_date_val = new Date(to_date_val);        
+        var st = "30/01/2020"; // sample
+        var pattern = /(\d{2})\/(\d{2})\/(\d{4})/;
+        parsed_records = [];
+        for(var cur_date in counts){
+            var dt = new Date(cur_date.replace(pattern,'$3-$2-$1'));
+            if(dt>=from_date_val && dt<=to_date_val)
+                parsed_records.push([
+                    dt, counts[cur_date]
+                ]);
+        }
+        
+        return parsed_records;
+    }
+
+    function show_data(given_data){
+        var data = new google.visualization.DataTable();
+        data.addColumn('date', 'Date');
+        data.addColumn('number', 'Count');
+        data.addRows(given_data);
+
+        chart.draw(data, {
+                           hAxis: {
+                                title: 'Date',
+                                gridlines: {
+                                    color: 'transparent'
+                                }
+                            },
+                            vAxis: {
+                                title: 'Deceased Count'
+                                
+                            },
+                            height: 500,
+                            // width: '100%',
+                            title: title,
+                            explorer: {
+                                actions: ['dragToZoom', 'rightClickToReset']
+                            },
+                            animation: {
+                                duration: 1500,
+                                startup: true //This is the new option
+                            }                   
+            });
+       
+    }
+
+function w3_open() {
+  document.getElementById("mySidebar").style.display = "block";
+  document.getElementById("myOverlay").style.display = "block";
+}
+
+function w3_close() {
+  document.getElementById("mySidebar").style.display = "none";
+  document.getElementById("myOverlay").style.display = "none";
+}
+</script>
+
+<script src ="hospital_b.js"></script>
+<script src="notify.js"></script> 
+<script src ="hospital.js"></script>
+<script src ="index.js"></script>
+
+
+</body>
+</html>

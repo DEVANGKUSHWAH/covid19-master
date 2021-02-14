@@ -1,0 +1,264 @@
+<html>
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+<body>
+<script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-database.js"></script>
+<script src="https://www.gstatic.com/charts/loader.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/1.3.5/jspdf.min.js"></script>
+<style>
+    .chart {
+        width: 100%; 
+        min-height: 450px;
+    }
+    .row {
+        margin:0 !important;
+    }
+</style>
+<input id="save-pdf" class="w3-btn" type="button" value="Save as PDF" disabled />
+<input id="show" class="w3-btn" type="button" value="Show Chart" disabled />
+<select class="w3-select w3-border" name="gender" id="gender">
+    <option disabled selected value> -- select gender -- </option>
+    <option value="male">Male</option>
+    <option value="female">Female</option>
+    <option value="NA">NA</option>
+    <option value="">None</option>
+</select>
+<select class="w3-select w3-border" name="state" id="state">
+    <option disabled selected value> -- select state -- </option>
+    <option value="">India</option>
+    <option value="Kerala">Kerala</option>
+<option value="Delhi">Delhi</option>
+<option value="Telangana">Telangana</option>
+<option value="Rajasthan">Rajasthan</option>
+<option value="Haryana">Haryana</option>
+<option value="Uttar Pradesh">Uttar Pradesh</option>
+<option value="Ladakh">Ladakh</option>
+<option value="Tamil Nadu">Tamil Nadu</option>
+<option value="Jammu and Kashmir">Jammu</option>
+<option value="Karnataka">Karnataka</option>
+<option value="Maharashtra">Maharashtra</option>
+<option value="Punjab">Punjab</option>
+<option value="Andhra Pradesh">AndhraPradesh</option>
+<option value="Uttarakhand">Uttarakhand</option>
+<option value="Odisha">Odisha</option>
+<option value="Puducherry">Puducherry</option>
+<option value="West Bengal">West</option>
+<option value="Chandigarh">Chandigarh</option>
+<option value="Chhattisgarh">Chhattisgarh</option>
+<option value="Gujarat">Gujarat</option>
+<option value="Himachal Pradesh">Himachal</option>
+<option value="Madhya Pradesh">Madhya</option>
+<option value="Bihar">Bihar</option>
+<option value="Manipur">Manipur</option>
+<option value="Mizoram">Mizoram</option>
+<option value="Goa">Goa</option>
+<option value="Andaman and Nicobar Islands">Andaman</option>
+</select>
+
+<select class="w3-select w3-border" name="ageGroups" id="ageGroups">
+    <option disabled selected value> -- select age group -- </option>
+    <option value="0,9">0-9</option>
+    <option value="10,19">10-19</option>
+    <option value="20,29">20-29</option>
+    <option value="30,39">30-39</option>
+    <option value="40,49">40-49</option>
+    <option value="50,59">50-59</option>
+    <option value="60,69">60-69</option>
+    <option value="70,79">70-79</option>
+    <option value="80,89">80-89</option>
+    <option value="90,110">90-110</option>
+    <option value="">None</option>
+  </select>
+
+<div id="chart_div" class="chart"></div>
+
+
+<!-- TODO: Add SDKs for Firebase products that you want to use
+     https://firebase.google.com/docs/web/setup#available-libraries -->
+
+<script>
+  // Your web app's Firebase configuration
+  var firebaseConfig = {
+    apiKey: "AIzaSyDg8iP3TfC6HJvjD_W9FIyyhvTrOJx8HY0",
+    authDomain: "covid-e65b8.firebaseapp.com",
+    databaseURL: "https://covid-e65b8.firebaseio.com",
+    projectId: "covid-e65b8",
+    storageBucket: "covid-e65b8.appspot.com",
+    messagingSenderId: "754926079609",
+    appId: "1:754926079609:web:dacff232a1dfabaf890ea8"
+  };
+  // Initialize Firebase
+  firebase.initializeApp(firebaseConfig);
+  console.log("firebase initialized")
+  
+  var rootRef = firebase.database().ref();//'patients');
+  var urlRef = rootRef.child("patients");
+  var all_records = [];
+  var cnt = 0;
+  var max_cnt = 10;
+  //
+  urlRef.limitToFirst(100).on("value", function(snapshot) {
+        console.log(snapshot);
+        max_cnt = snapshot.numChildren();        
+        snapshot.forEach(function(child) {
+            cnt= cnt + 1;
+            var record = child.val();
+            var parsed_record = {
+                'date': record.reportedOn,
+                'state': record.state,
+                'age': record.ageEstimate,
+                'gender': record.gender
+            }
+            all_records.push(parsed_record)
+            console.log(parsed_record);
+            if(cnt >= max_cnt){
+                btnShow.disabled = false;
+                buttonShowClick();
+            }
+        });
+  });
+
+    var container = document.getElementById('chart_div');
+    var chart = "None";
+    var btnSave = document.getElementById('save-pdf');
+    var btnShow = document.getElementById('show');
+    var title = 'COVID-19 DECEASED STATS';
+    var default_title = 'COVID-19 DECEASED STATS';
+
+    google.charts.load('current', {'packages':['corechart']});
+    google.charts.setOnLoadCallback(enableChart);
+
+    function enableChart(){
+        btnSave.disabled = false;
+        chart = new google.visualization.LineChart(container);
+    }
+
+    // google.visualization.events.addListener(chart, 'ready', function () {
+    //   btnSave.disabled = false;
+    // });
+  
+    btnShow.addEventListener('click', function () {
+        buttonShowClick();
+    }, false);
+
+    function buttonShowClick(){
+        var data = get_data();
+        show_data(data);
+    }
+
+    btnSave.addEventListener('click', function () {
+      var doc = new jsPDF();
+      doc.addImage(chart.getImageURI(), 0, 0);
+      doc.save('chart.pdf');
+    }, false);
+  
+    function get_data(){
+        var state = document.getElementById("state").value;
+        var age = document.getElementById("ageGroups").value;
+        var gender = document.getElementById("gender").value;
+        var fromAge=0, toAge=200;
+        title = default_title;
+        if(age != ""){
+            fromAge = parseInt(age.split(",")[0]);
+            toAge = parseInt(age.split(",")[1]);    
+            title = title + " (Age: "+fromAge+"-"+toAge+")";        
+        }
+
+        if(state != ""){
+            title = title + " (State: "+state+")";
+        }
+
+        if(gender == ""){
+            gender = "All";
+        }else{
+            title = title + " (Gender: "+gender+")";
+        }
+        var selected_records = [];
+        for(var rec of all_records){
+            if(gender != "All"){
+                if(gender == "NA"){
+                    gender = "";
+                }     
+                if(rec['gender'] != gender)
+                    continue;                
+                // filter gender
+            }
+            if(state != ""){
+                if(rec['state'] != state)
+                    continue;
+                // filter state
+            }
+            if(age != ""){
+                if(rec['age'] =="")
+                    continue;
+                cur_age = parseInt(rec['age']);
+                if(cur_age< fromAge || cur_age > toAge)
+                    continue;
+                // filter age
+            }
+            selected_records.push(rec);
+        }
+
+        var counts = selected_records.reduce((p, c) => {
+            var name = c.date;
+            if (!p.hasOwnProperty(name)) {
+                p[name] = 0;
+            }
+            p[name]++;
+            return p;
+        }, {});
+        var st = "30/01/2020"; // sample
+        var pattern = /(\d{2})\/(\d{2})\/(\d{4})/;
+        parsed_records = [];
+        for(var cur_date in counts){
+            var dt = new Date(cur_date.replace(pattern,'$3-$2-$1'));
+            parsed_records.push([
+                dt, counts[cur_date]
+            ]);
+        }
+        return parsed_records;
+    }
+    function show_data(given_data){
+        var data = new google.visualization.DataTable();
+        data.addColumn('date', 'Date');
+        data.addColumn('number', 'Count');
+        data.addRows(given_data);
+
+        chart.draw(data, {
+                           hAxis: {
+                                title: 'Date',
+                                gridlines: {
+                                    color: 'transparent'
+                                }
+                            },
+                            vAxis: {
+                                title: 'Deceased Count',
+                                gridlines: {
+                                    color: 'transparent'
+                                }
+                            },
+                            // height: 600,
+                            // width: '100%',
+                            title: title,
+                            explorer: {
+                                actions: ['dragToZoom', 'rightClickToReset']
+                            },
+                            animation: {
+                                duration: 1500,
+                                startup: true //This is the new option
+                            }                   
+            });
+        // var chart = new google.visualization.ScatterChart(
+        // document.getElementById('visualization'));
+        // chart.draw(data, {title: 'Test',
+        //               width: 600, height: 400,
+        //               vAxis: {title: "cr", titleTextStyle: {color: "green"}},
+        //               hAxis: {title: "time", titleTextStyle: {color: "green"}},
+        //               lineWidth: 1}
+        //       );
+    }
+
+
+</script>
+</body>
+</html>
