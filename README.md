@@ -10,8 +10,9 @@
 
 ### Description
 
--  Demo page is []().
+-  Demo page is [devangkushwah.github.io/covid19-master](https://devangkushwah.github.io/covid19-master/).
    This page contains contact informations, advisories, hospital and medical college details.
 -  There a customizable chart to view deseased people stats coming from firebase.
 -  As the data displayed in chart is coming firebase, **the modified data will be reflected in page instantly**.
+
 # COVID19-master
